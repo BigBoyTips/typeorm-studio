@@ -1,6 +1,5 @@
 // Run with: npm run build && npm test
 require("reflect-metadata");
-process.env.TYPEORM_STUDIO_AI = "off"; // keep tests offline and deterministic
 const { test, before, after } = require("node:test");
 const assert = require("node:assert/strict");
 const { DataSource, EntitySchema } = require("typeorm");
@@ -230,12 +229,12 @@ test("schema-diff reports in sync, then the DDL for an out-of-sync database", as
   assert.equal(m.configured, false);
 });
 
-test("ai procedure explains how to enable it when no credentials", async () => {
-  const r = await (createStudioDispatcher(ds))({ procedure: "ai", prompt: "books", mode: "auto" });
+test("unknown procedures are rejected", async () => {
+  const r = await (createStudioDispatcher(ds))({ procedure: "ai", prompt: "books" });
   assert.equal(r.ok, false);
-  assert.match(r.error.message, /ANTHROPIC_API_KEY/);
+  assert.match(r.error.message, /Unknown procedure "ai"/);
   const meta = await call({ procedure: "introspect" });
-  assert.equal(meta.capabilities.ai, null);
+  assert.equal("ai" in meta.capabilities, false);
 });
 
 test("full-table search runs under the dialect's guardrails", async () => {

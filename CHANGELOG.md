@@ -6,14 +6,17 @@ All notable changes to this project are listed here. The format follows
 
 ## [1.2.0]
 
+### Removed
+
+- The AI assistant ("Ask AI" in the filter menu and the SQL view), the `ai`
+  procedure, the `ai` handler option and the `askAi` export. Studio no longer
+  depends on `@anthropic-ai/sdk`.
+
 ### Changed
 
 - Requires Node.js 20 or later.
-- `@anthropic-ai/sdk` is no longer installed automatically. It is now an
-  optional peer dependency: install it yourself to use the AI assistant.
 - The package now has an `exports` map. Import from `typeorm-studio`;
   deep imports such as `typeorm-studio/dist/adapter` are no longer allowed.
-
 - The UI's files are served gzip-compressed with ETags, so reloads re-use the
   browser's copy instead of downloading about 590 KB again.
 - Query Insights does its SQL parsing once per distinct statement instead of on
@@ -26,5 +29,4 @@ All notable changes to this project are listed here. The format follows
 - Saving an edit to a row that was deleted in the meantime now reports "Row no
   longer exists" on every TypeORM 0.3 release. Early 0.3 versions failed with
   `repo.exist is not a function`.
-
 - The MongoDB example's `objectId` column no longer fails the TypeScript check.

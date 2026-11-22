@@ -15,10 +15,6 @@ logo are this project's own.
 - Node.js 20 or later
 - TypeORM 0.3.x (a peer dependency: Studio uses your project's copy)
 - For a `.ts` data source: `ts-node` or `tsx` installed in your project
-- Optional: `@anthropic-ai/sdk`, only for the built-in AI assistant. It stays
-  off unless the SDK is installed and Anthropic credentials are set (for
-  example `ANTHROPIC_API_KEY`). It sends your schema and your request, never
-  row data.
 
 ## Supported databases
 

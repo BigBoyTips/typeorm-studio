@@ -1,6 +1,5 @@
 // MongoDB suite. Run with: npm run build && npm run test:mongo  (MONGO_URL defaults to mongodb://127.0.0.1:27018/studio_test)
 require("reflect-metadata");
-process.env.TYPEORM_STUDIO_AI = "off";
 const { test, before, after } = require("node:test");
 const assert = require("node:assert/strict");
 const { DataSource, EntitySchema } = require("typeorm");

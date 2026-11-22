@@ -38,8 +38,7 @@ scope, for example:
 - SQL or MongoDB injection through filters, search, sorting or table and
   column names;
 - writes, raw SQL or SQL filters that still work in `--read-only` mode;
-- reading files outside the `ui/` folder through the static file server;
-- the AI assistant sending row data, rather than only the schema.
+- reading files outside the `ui/` folder through the static file server.
 
 Out of scope:
 

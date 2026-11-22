@@ -79,7 +79,7 @@
   /* API (every call is logged for the Console view)                  */
   /* ================================================================ */
   // Like Prisma Studio, the Console shows data operations; the background drift check is left out.
-  const LOGGED = new Set(["introspect", "query", "insert", "update", "delete", "raw", "ai"]);
+  const LOGGED = new Set(["introspect", "query", "insert", "update", "delete", "raw"]);
   async function call(procedure, payload = {}) {
     let body;
     try {
@@ -997,7 +997,6 @@
     const t = T();
     if (!t) return;
     const items = [];
-    if (S.caps.ai) items.push({ label: "Ask AI to filter…", hint: "AI", icon: "code", onSelect: () => addPill({ kind: "AI", id: uid(), prompt: "" }) });
     if (!S.meta.readOnly) {
       items.push(isMongo()
         ? { label: "Mongo query document", hint: "Raw JSON", icon: "code", onSelect: () => addPill({ kind: "SqlFilter", id: uid(), sql: "", after: "and" }) }
@@ -1042,20 +1041,13 @@
         nodes.push(el("button", { class: "pill", title: "Click to switch AND / OR", onclick: () => { prev.after = prev.after === "or" ? "and" : "or"; applyPills(); } }, el("span", { class: "join", text: prev.after || "and" })));
       }
       const remove = el("button", { class: "remove", title: "Remove filter", "aria-label": "Remove filter", onclick: () => { S.pills.splice(i, 1); applyPills(); } }, ico("x"));
-      const apply = el("button", { class: "apply", title: "Apply filter (Enter)", "aria-label": "Apply filter", onclick: () => (p.kind === "AI" ? runAiPill(p) : applyPills()) }, ico("check"));
+      const apply = el("button", { class: "apply", title: "Apply filter (Enter)", "aria-label": "Apply filter", onclick: () => applyPills() }, ico("check"));
       if (p.kind === "SqlFilter") {
         nodes.push(el("div", { class: "pill" + (p.dirty ? " dirty" : ""), "data-id": p.id },
           el("span", { class: "col" }, ico("code"), isMongo() ? "QUERY" : "WHERE"),
           el("input", { class: "val sqlv", type: "text", value: p.sql, placeholder: isMongo() ? "{ views: { $gt: 100 } }" : `"views" > 100`, "aria-label": isMongo() ? "Mongo query document" : "SQL WHERE clause", spellcheck: "false",
             oninput: (e) => { p.sql = e.target.value; p.dirty = true; e.target.closest(".pill").classList.add("dirty"); },
             onkeydown: (e) => { if (e.key === "Enter") applyPills(); } }),
-          apply, remove));
-      } else if (p.kind === "AI") {
-        nodes.push(el("div", { class: "pill dirty", "data-id": p.id },
-          el("span", { class: "col" }, el("span", { class: "ai-mark", text: "✦" }), "AI"),
-          el("input", { class: "val sqlv", type: "text", value: p.prompt, placeholder: "published posts with more than 100 views", "aria-label": "Describe the rows you want",
-            oninput: (e) => (p.prompt = e.target.value),
-            onkeydown: (e) => { if (e.key === "Enter") runAiPill(p); } }),
           apply, remove));
       } else {
         const c = T().columns.find((x) => x.name === p.column);
@@ -1099,28 +1091,6 @@
     writeHash();
     renderFilterBar();
     load();
-  }
-  async function runAiPill(p) {
-    if (!p.prompt.trim()) return;
-    const pill = document.querySelector(`.pill[data-id="${p.id}"]`);
-    if (pill) pill.style.opacity = ".6";
-    try {
-      const r = await call("ai", { prompt: p.prompt, mode: "filter", table: S.table });
-      const idx = S.pills.indexOf(p);
-      if (r.mode === "sql") {
-        S.pills.splice(idx, 1);
-        renderFilterBar();
-        if (r.sql) { openSqlWith(r.sql); toast("That needs SQL — opened it in the SQL view"); } else toast(r.explanation || "That can't be expressed as a filter", true);
-        return;
-      }
-      const made = (r.filters || []).map((f) => ({ kind: "ColumnFilter", id: uid(), column: f.column, operator: f.operator, value: f.value ?? "", after: f.after }));
-      S.pills.splice(idx, 1, ...made);
-      applyPills();
-      if (r.explanation) toast(r.explanation);
-    } catch (e) {
-      if (pill) pill.style.opacity = "";
-      toast(e.message, true);
-    }
   }
 
   /* ================================================================ */
@@ -1409,7 +1379,6 @@
         host.append(ta);
         editor = { getValue: () => ta.value, setValue: (v) => (ta.value = v), getSelection: () => ta.value.slice(ta.selectionStart, ta.selectionEnd), focus: () => ta.focus() };
       }
-      $("#sql-ai").classList.toggle("hidden", !S.caps.ai);
       renderHistory();
     }
     setTimeout(() => editor.focus(), 0);
@@ -1463,26 +1432,6 @@
     document.body.append(a);
     a.click();
     a.remove();
-  }
-  async function aiSql() {
-    const prompt = $("#sql-ai-input").value.trim();
-    if (!prompt) return;
-    const btn = $("#sql-ai-go");
-    btn.disabled = true;
-    btn.textContent = "Thinking…";
-    try {
-      const r = await call("ai", { prompt, mode: "sql", table: S.table || undefined, sql: editor.getValue() });
-      if (!r.sql) { toast(r.explanation || "No SQL was produced", true); return; }
-      editor.setValue(r.sql);
-      store.set(draftKey(), r.sql);
-      $("#sql-status").textContent = r.explanation || "";
-      editor.focus();
-    } catch (e) {
-      toast(e.message, true);
-    } finally {
-      btn.disabled = false;
-      btn.textContent = "Generate";
-    }
   }
 
   /* ================================================================ */
@@ -1577,8 +1526,6 @@
     $("#sql-run").onclick = runSql;
     $("#sql-export").onclick = exportCsv;
     $("#sql-history").onchange = (e) => { const h = store.get(historyKey(), []); if (e.target.value !== "") { editor.setValue(h[+e.target.value]); editor.focus(); } e.target.value = ""; };
-    $("#sql-ai-go").onclick = aiSql;
-    $("#sql-ai-input").addEventListener("keydown", (e) => e.key === "Enter" && aiSql());
 
     $("#console-clear").onclick = () => { S.log = []; renderConsole(); };
     $("#q-reset").onclick = () => loadInsights(true);
@@ -1629,8 +1576,6 @@
     if (isMongo()) {
       $("#nav-sql").textContent = "Query";
       $("#sql-run").replaceChildren(ico("play"), " Run");
-      $("#sql-ai-input").placeholder = "Ask AI to write a query… e.g. top 5 authors by total post views";
-      $("#sql-ai-input").setAttribute("aria-label", "Describe the query you want");
     }
     readHash();
     if (S.view === "sql" && !S.caps.sqlEditor) S.view = "table";

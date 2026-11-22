@@ -5,4 +5,3 @@ export * from "./types";
 export { QueryInsights, studioContext } from "./insights";
 export type { InsightQuery, InsightsSnapshot } from "./insights";
 export { schemaDiff, migrationStatus } from "./schema";
-export { askAi } from "./ai";

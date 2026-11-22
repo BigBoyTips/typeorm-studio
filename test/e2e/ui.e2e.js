@@ -23,23 +23,6 @@ const BASE = process.env.BASE || "http://127.0.0.1:5555/";
   const rowCount = () => page.locator("#grid tbody tr").count();
   const counter = () => page.textContent("#row-count");
 
-  // stub only the AI procedure so its UI can be exercised without an API key
-  await page.route("**/api", async (route) => {
-    const body = JSON.parse(route.request().postData() || "{}");
-    if (body.procedure === "introspect") {
-      const res = await route.fetch();
-      const json = await res.json();
-      json.result.capabilities.ai = { model: "stub" };
-      return route.fulfill({ json });
-    }
-    if (body.procedure === "ai") {
-      return route.fulfill({ json: body.mode === "filter"
-        ? { ok: true, result: { mode: "filter", sql: null, explanation: "Published posts with > 400 views", filters: [{ column: "published", operator: "=", value: "true", after: "and" }, { column: "views", operator: ">", value: "400", after: "and" }] } }
-        : { ok: true, result: { mode: "sql", filters: null, explanation: "Posts per author", sql: 'SELECT "authorId", count(*) AS posts FROM post GROUP BY "authorId"' } } });
-    }
-    return route.continue();
-  });
-
   await step("opens the first table with typed values and Prisma-style headers", async () => {
     await go("");
     await page.waitForSelector("#grid tbody tr");
@@ -118,21 +101,6 @@ const BASE = process.env.BASE || "http://127.0.0.1:5555/";
     await page.waitForTimeout(500);
     assert(/of \d+ rows/.test(await counter()) && !/of 56/.test(await counter()), await counter());
     await page.locator(".pill .remove").click();
-    await page.waitForTimeout(400);
-  });
-
-  await step("filter: Ask AI pill fills column filters", async () => {
-    await page.click("#filter-btn");
-    await page.keyboard.type("ask ai");
-    await page.keyboard.press("Enter");
-    await page.keyboard.type("published posts with more than 400 views");
-    await page.keyboard.press("Enter");
-    await page.waitForTimeout(700);
-    assert((await page.locator(".pill .col").count()) === 2, "two pills");
-    const views = await page.$$eval("#grid tbody tr", (trs, idx) => trs.map((tr) => +tr.querySelectorAll("td")[idx + 1].textContent), await colIndex("views"));
-    assert(views.length && views.every((v) => v > 400), views.join(","));
-    await page.locator(".pill .remove").last().click();
-    await page.locator(".pill .remove").last().click();
     await page.waitForTimeout(400);
   });
 
@@ -304,7 +272,7 @@ const BASE = process.env.BASE || "http://127.0.0.1:5555/";
     assert(/query, /.test(await page.locator(".op-head").last().textContent()), "labels");
   });
 
-  await step("SQL view: autocomplete, lint, run, history, AI", async () => {
+  await step("SQL view: autocomplete, lint, run, history", async () => {
     await page.click('#views a[data-view="sql"]');
     await page.waitForSelector("#sql-editor .cm-editor");
     await page.locator("#sql-editor .cm-content").click();
@@ -319,10 +287,6 @@ const BASE = process.env.BASE || "http://127.0.0.1:5555/";
     await page.keyboard.press("ControlOrMeta+Enter");
     await page.waitForTimeout(600);
     assert(/rows/.test(await page.textContent("#sql-status")), await page.textContent("#sql-status"));
-    await page.fill("#sql-ai-input", "posts per author");
-    await page.click("#sql-ai-go");
-    await page.waitForTimeout(400);
-    assert(/GROUP BY/.test(await page.locator("#sql-editor .cm-content").textContent()), "AI sql");
   });
 
   await step("Queries view shows grouped statements", async () => {

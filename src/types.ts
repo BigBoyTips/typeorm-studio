@@ -159,8 +159,7 @@ export type StudioRequest =
   | { procedure: "sql-lint"; sql: string }
   | { procedure: "insights"; since?: number; limit?: number; includeStudio?: boolean; reset?: boolean }
   | { procedure: "schema-diff" }
-  | { procedure: "migrations" }
-  | { procedure: "ai"; prompt: string; mode: "filter" | "sql" | "auto"; table?: string; sql?: string };
+  | { procedure: "migrations" };
 
 export interface StudioQueryLogEntry {
   sql: string;

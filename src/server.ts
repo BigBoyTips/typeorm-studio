@@ -4,7 +4,6 @@ import * as path from "path";
 import * as zlib from "zlib";
 import type { DataSource } from "typeorm";
 import { StudioError, TypeormStudioAdapter } from "./adapter";
-import { AI_MODEL, aiAvailable, askAi } from "./ai";
 import { CapturedQuery, QueryInsights, studioContext } from "./insights";
 import { MongoStudioAdapter } from "./mongo";
 import { migrationStatus, schemaDiff } from "./schema";
@@ -35,8 +34,6 @@ export interface StudioHandlerOptions {
   readOnly?: boolean;
   /** Record queries for the Query Insights view (default true). */
   insights?: boolean;
-  /** Natural-language assistant; "auto" enables it when Anthropic credentials are found (default). */
-  ai?: "auto" | false;
   /**
    * Accept only requests whose Host header names one of these hosts (DNS-rebinding protection).
    * The CLI sets this to the loopback names when it listens on localhost.
@@ -44,7 +41,7 @@ export interface StudioHandlerOptions {
   allowedHosts?: string[];
 }
 
-const READ_ONLY_PROCEDURES = new Set(["introspect", "count", "query", "sql-schema", "insights", "schema-diff", "migrations", "ai"]);
+const READ_ONLY_PROCEDURES = new Set(["introspect", "count", "query", "sql-schema", "insights", "schema-diff", "migrations"]);
 
 /**
  * The "BFF" (backend-for-frontend) procedure dispatcher.
@@ -57,7 +54,6 @@ export function createStudioDispatcher(dataSource: DataSource, options: StudioHa
   const recorder = QueryInsights.shared(dataSource);
   if (options.insights !== false) recorder.enabled = true;
   const insights = options.insights === false ? null : recorder;
-  const aiEnabled = options.ai === false ? Promise.resolve(false) : aiAvailable();
 
   async function handle(req: StudioRequest): Promise<unknown> {
     if (options.readOnly && !READ_ONLY_PROCEDURES.has(req.procedure)) {
@@ -77,7 +73,6 @@ export function createStudioDispatcher(dataSource: DataSource, options: StudioHa
             // MongoDB operations bypass QueryRunner.query, so there is no app traffic to record.
             insights: !!insights && !mongo,
             schemaDiff: !mongo,
-            ai: (await aiEnabled) ? { model: AI_MODEL } : null,
             fullTableSearch: true,
             /** "sql", or "mongodb" for the mongosh-style console and JSON filters. */
             queryLanguage: mongo ? "mongodb" : "sql",
@@ -107,13 +102,6 @@ export function createStudioDispatcher(dataSource: DataSource, options: StudioHa
         return schemaDiff(dataSource);
       case "migrations":
         return migrationStatus(dataSource);
-      case "ai": {
-        if (!(await aiEnabled)) throw new StudioError("AI is not configured. Set ANTHROPIC_API_KEY (or run `ant auth login`) and restart Studio.");
-        const meta = adapter.introspect();
-        const result = await askAi(meta, adapter.sqlSchema().dialect, req);
-        if (options.readOnly && result.mode === "sql") result.sql = null;
-        return result;
-      }
       default:
         throw new StudioError(`Unknown procedure "${(req as { procedure: string }).procedure}"`);
     }

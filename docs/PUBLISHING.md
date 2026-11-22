@@ -31,12 +31,9 @@ The package exposes:
 - the library entry point `typeorm-studio` (`dist/index.js`, types in `dist/index.d.ts`). The `exports` map allows only this entry point and `typeorm-studio/package.json`. Anything else a user should import must be re-exported from `src/index.ts`.
 - the `typeorm-studio` command, from `dist/cli.js`
 
-Peer dependencies, which users install themselves:
+`typeorm` (`^0.3.0`) is a peer dependency, so users bring their own copy. The only runtime dependency is `reflect-metadata`.
 
-- `typeorm` (`^0.3.0`), required
-- `@anthropic-ai/sdk` (`^1.4.0`), optional: only needed for the AI assistant. It is also a dev dependency so the package builds.
-
-> **Keep optional packages out of the public types.** A type in `dist/*.d.ts` that references `@anthropic-ai/sdk` breaks TypeScript users who haven't installed it. Keep SDK types inside function bodies or non-exported functions in `src/ai.ts`, and check after building that `dist/ai.d.ts` doesn't import the SDK.
+> **Keep optional packages out of the public types.** If you ever add an optional dependency, don't reference its types from anything exported: a type in `dist/*.d.ts` that imports a package the user hasn't installed breaks their TypeScript build.
 
 ---
 
@@ -236,7 +233,7 @@ npm dist-tag add typeorm-studio@1.2.0 latest
 | `EOTP` / one-time password required | Two-factor authentication is on | Enter the code from your authenticator, or pass `--otp=123456` |
 | `E402 Payment Required` | Publishing a scoped package without `--access public` | `npm publish --access public` |
 | Users report old behaviour after a release | `dist/` was stale when published | Check the `prepublishOnly` script is still in `package.json`, then release a new patch |
-| TypeScript users see `Cannot find module '@anthropic-ai/sdk'` | A public type references the optional SDK | Keep SDK types out of exported signatures (see [What gets published](#what-gets-published)) |
+| TypeScript users see `Cannot find module '<package>'` | A public type references an optional package | Keep its types out of exported signatures (see [What gets published](#what-gets-published)) |
 | `ERR_PACKAGE_PATH_NOT_EXPORTED` | A user imports a file that isn't in the `exports` map | Re-export what they need from `src/index.ts` |
 | `typeorm-studio: command not found` after install | `dist/cli.js` missing from the package | Run `npm run build`, then check `npm pack --dry-run` lists `dist/cli.js` |
 
