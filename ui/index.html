@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TypeORM Studio</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 1l6 7-6 7-6-7z' fill='%234f5bd5'/%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div id="app">
+      <!-- ================= SIDEBAR ================= -->
+      <aside id="sidebar" aria-label="Navigation">
+        <div class="brand">
+          <svg class="logo" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1l6 7-6 7-6-7z" /></svg>
+          <span class="brand-name">TypeORM Studio</span>
+        </div>
+        <label class="schema-select">
+          <span>Schema:</span>
+          <select id="schema" aria-label="Schema"></select>
+        </label>
+
+        <div class="side-section">
+          <div class="side-head"><span class="ico ico-grid"></span><span>Studio</span></div>
+          <nav class="side-links" id="views">
+            <a href="#" data-view="visualizer">Visualizer</a>
+            <a href="#" data-view="console">Console</a>
+            <a href="#" data-view="sql" id="nav-sql">SQL</a>
+            <a href="#" data-view="queries" id="nav-queries">Queries</a>
+          </nav>
+        </div>
+
+        <div class="side-section grow">
+          <div class="side-head" id="tables-head">
+            <span class="ico ico-grid"></span><span>Tables</span>
+            <span class="side-actions">
+              <button class="icon-btn sm" id="tables-search-btn" aria-label="Search tables" title="Search tables"><span class="ico ico-search"></span></button>
+              <button class="icon-btn sm" id="tables-refresh" aria-label="Refresh tables" title="Refresh tables"><span class="ico ico-refresh"></span></button>
+            </span>
+          </div>
+          <div class="tables-search hidden" id="tables-search-wrap">
+            <input id="tables-search" type="search" placeholder="Search tables…" autocomplete="off" aria-label="Search tables" />
+          </div>
+          <nav class="side-links mono" id="tables"></nav>
+        </div>
+        <div class="side-foot muted" id="conn"></div>
+        <div id="sidebar-resizer" aria-hidden="true"></div>
+      </aside>
+
+      <main id="main">
+        <!-- ================= TABLE VIEW ================= -->
+        <section id="view-table" class="view">
+          <header class="toolbar">
+            <button class="icon-btn sidebar-toggle" aria-label="Toggle navigation" title="Toggle navigation"><span class="ico ico-sidebar"></span></button>
+            <div class="search-box" id="search-box">
+              <button class="icon-btn" id="search-btn" aria-label="Search rows" title="Search rows"><span class="ico ico-search"></span></button>
+              <div class="search-field hidden" id="search-field">
+                <input id="search" type="text" placeholder="Search…" autocomplete="off" aria-label="Search rows" />
+                <button class="icon-btn bare" id="search-clear" aria-label="Clear search"><span class="ico ico-x"></span></button>
+              </div>
+            </div>
+            <div class="menu-anchor">
+              <button class="btn" id="filter-btn" aria-label="Add filter" aria-haspopup="menu"><span class="ico ico-filter"></span><span class="ico ico-chevron"></span></button>
+            </div>
+            <button class="btn" id="insert-btn">Insert row</button>
+            <div class="menu-anchor hidden" id="copy-wrap">
+              <button class="btn" id="copy-btn" aria-haspopup="menu">copy as <span class="ico ico-chevron"></span></button>
+            </div>
+            <button class="btn save hidden" id="save-btn"></button>
+            <button class="btn discard hidden" id="discard-btn">Discard edits</button>
+            <button class="btn subtle hidden" id="delete-btn"></button>
+            <span class="spacer"></span>
+            <span class="muted small" id="table-note"></span>
+            <button class="icon-btn" id="refresh-btn" aria-label="Refresh table" title="Refresh table"><span class="ico ico-refresh"></span></button>
+          </header>
+          <div id="filter-bar" class="filter-bar hidden"></div>
+
+          <div id="grid-wrap" tabindex="0" aria-label="Data grid. Arrow keys move, Enter edits, Ctrl+C / Ctrl+V copy and paste.">
+            <table id="grid"></table>
+            <div id="empty" class="empty-note hidden"></div>
+          </div>
+
+          <footer class="pager-bar">
+            <div class="pager" id="pager">
+              <button class="pg" id="pg-first" aria-label="First page"><span class="ico ico-first"></span></button>
+              <button class="pg" id="pg-prev" aria-label="Previous page"><span class="ico ico-prev"></span></button>
+              <span class="pg-pos"><input id="pg-input" type="text" inputmode="numeric" aria-label="Page" /> of <span id="pg-total">1</span></span>
+              <span class="pg-size">
+                <select id="pg-size" aria-label="Rows per page">
+                  <option value="10">10 rows per page</option><option value="25" selected>25 rows per page</option>
+                  <option value="50">50 rows per page</option><option value="100">100 rows per page</option>
+                  <option value="250">250 rows per page</option><option value="500">500 rows per page</option>
+                </select>
+              </span>
+              <button class="pg" id="pg-next" aria-label="Next page"><span class="ico ico-next"></span></button>
+              <button class="pg" id="pg-last" aria-label="Last page"><span class="ico ico-last"></span></button>
+            </div>
+            <label class="toggle"><input type="checkbox" id="infinite" /><span class="track"></span> infinite scroll</label>
+            <span class="spacer"></span>
+            <span class="muted small" id="row-count"></span>
+          </footer>
+        </section>
+
+        <!-- ================= VISUALIZER ================= -->
+        <section id="view-visualizer" class="view hidden">
+          <header class="toolbar">
+            <button class="icon-btn sidebar-toggle" aria-label="Toggle navigation" title="Toggle navigation"><span class="ico ico-sidebar"></span></button>
+            <span class="legend"><span class="key pk"></span>Primary Key</span>
+            <span class="legend"><span class="key nul">?</span>Nullable</span>
+            <span class="legend"><span class="key fk"></span>Foreign Key</span>
+            <span class="spacer"></span>
+            <button class="btn" id="drift-btn">Schema drift <span class="badge hidden" id="drift-badge"></span></button>
+          </header>
+          <div class="viz-body">
+            <div id="viz" class="viz" tabindex="0" aria-label="Entity diagram. Drag to pan, scroll to zoom.">
+              <div id="viz-stage"><svg id="viz-lines"></svg></div>
+              <div class="viz-zoom">
+                <button class="icon-btn" id="zoom-in" aria-label="Zoom in">+</button>
+                <button class="icon-btn" id="zoom-out" aria-label="Zoom out">−</button>
+                <button class="icon-btn" id="zoom-fit" aria-label="Fit view"><span class="ico ico-fit"></span></button>
+              </div>
+            </div>
+            <aside id="drift-panel" class="hidden" aria-label="Schema drift"></aside>
+          </div>
+        </section>
+
+        <!-- ================= CONSOLE ================= -->
+        <section id="view-console" class="view hidden">
+          <header class="toolbar">
+            <button class="icon-btn sidebar-toggle" aria-label="Toggle navigation" title="Toggle navigation"><span class="ico ico-sidebar"></span></button>
+            <span class="spacer"></span>
+            <button class="btn" id="console-clear">Clear</button>
+          </header>
+          <div class="console-body" id="console"></div>
+        </section>
+
+        <!-- ================= SQL ================= -->
+        <section id="view-sql" class="view hidden">
+          <header class="toolbar">
+            <button class="icon-btn sidebar-toggle" aria-label="Toggle navigation" title="Toggle navigation"><span class="ico ico-sidebar"></span></button>
+            <select id="sql-history" class="btn" aria-label="History"><option value="">History</option></select>
+            <span class="spacer"></span>
+            <button class="btn primary" id="sql-run" title="Ctrl/⌘ + Enter"><span class="ico ico-play"></span> Run SQL</button>
+          </header>
+          <div class="sql-top">
+            <div class="ai-bar hidden" id="sql-ai">
+              <span class="ai-mark">✦</span>
+              <input id="sql-ai-input" type="text" placeholder="Ask AI to write SQL… e.g. top 5 authors by total post views" autocomplete="off" aria-label="Describe the SQL you want" />
+              <button class="btn" id="sql-ai-go">Generate</button>
+            </div>
+            <div id="sql-editor"></div>
+          </div>
+          <div class="sql-result">
+            <div class="sql-status"><span id="sql-status" class="muted"></span><span class="spacer"></span><button class="btn" id="sql-export" disabled>Export CSV</button></div>
+            <div class="sql-grid-wrap"><table id="sql-grid" class="plain-grid"></table></div>
+          </div>
+        </section>
+
+        <!-- ================= QUERIES (insights) ================= -->
+        <section id="view-queries" class="view hidden">
+          <header class="toolbar">
+            <button class="icon-btn sidebar-toggle" aria-label="Toggle navigation" title="Toggle navigation"><span class="ico ico-sidebar"></span></button>
+            <input id="q-filter" class="field" type="search" placeholder="Filter queries…" autocomplete="off" aria-label="Filter queries" />
+            <label class="check"><input type="checkbox" id="q-studio" /> Include Studio's own queries</label>
+            <label class="toggle"><input type="checkbox" id="q-live" checked /><span class="track"></span> Live</label>
+            <span class="spacer"></span>
+            <span class="muted small" id="q-summary"></span>
+            <button class="btn" id="q-reset">Reset</button>
+          </header>
+          <div class="scroll"><table id="q-grid" class="plain-grid"></table><div id="q-empty" class="empty-note hidden"></div></div>
+        </section>
+      </main>
+    </div>
+
+    <div id="popover" class="popover hidden" role="dialog"></div>
+    <div id="menu" class="menu hidden" role="menu"></div>
+    <div id="toast" role="status" aria-live="polite"></div>
+    <script src="vendor/codemirror.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
