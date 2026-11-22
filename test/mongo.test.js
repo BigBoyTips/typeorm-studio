@@ -8,7 +8,7 @@ const { parseShell } = require("../dist/mongo-shell");
 
 const ENABLED = process.env.TEST_DB === "mongodb" || !!process.env.MONGO_URL;
 const URL = process.env.MONGO_URL || "mongodb://127.0.0.1:27018/studio_test";
-const skip = ENABLED ? false : "set TEST_DB=mongodb (or MONGO_URL) to run the MongoDB suite";
+const skip = ENABLED ? false : "run `npm run test:mongo` (or set MONGO_URL) to run the MongoDB suite";
 
 class Address {}
 const AddressSchema = new EntitySchema({ name: "Address", target: Address, columns: { city: { type: String }, zip: { type: String, nullable: true } } });

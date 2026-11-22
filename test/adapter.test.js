@@ -6,7 +6,7 @@ const { DataSource, EntitySchema } = require("typeorm");
 const { createStudioDispatcher } = require("../dist");
 const { splitStatements } = require("../dist/adapter");
 
-// TEST_DB=postgres|mysql|mariadb|mssql runs the same suite against a live server (see README "Development").
+// TEST_DB=postgres|mysql|mariadb|mssql runs the same suite against a live server (see CONTRIBUTING.md, "Tests").
 // MongoDB has its own suite (test/mongo.test.js).
 const DB = process.env.TEST_DB || "sqlite";
 const CONNECTIONS = {

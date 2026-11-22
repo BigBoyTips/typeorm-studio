@@ -113,7 +113,7 @@ npm test
 npm run test:postgres   # also: test:mysql, test:mariadb, test:mssql, test:mongo
 ```
 
-These scripts set the variable `TEST_DB=...` with Unix shell syntax. On Windows, run them from Git Bash or WSL.
+These scripts work in any shell, including on Windows. Connection settings are in [CONTRIBUTING.md](../CONTRIBUTING.md#tests).
 
 ### 4. Try the packed package locally
 

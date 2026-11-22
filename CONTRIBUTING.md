@@ -56,11 +56,15 @@ runs against a live server when `TEST_DB` is set:
 | `npm run test:mssql` | SQL Server | `MSSQL_URL` (`mssql://sa:Studio_Pass1@127.0.0.1:14330/studio`) |
 | `npm run test:mongo` | MongoDB | `MONGO_URL` (`mongodb://127.0.0.1:27018/studio_test`) |
 
-**On Windows**, these scripts only work from Git Bash or WSL, because they set
-`TEST_DB` with Unix shell syntax. In PowerShell, set it yourself:
+The scripts work in any shell, including PowerShell and cmd on Windows. They
+call `test/run.js`, which you can also run directly:
+`node test/run.js postgres`.
+
+Set the connection variable when your server needs different credentials, for
+example in PowerShell:
 
 ```powershell
-$env:TEST_DB = "postgres"; node --test test/*.test.js
+$env:PG_URL = "postgres://postgres:secret@127.0.0.1:5432/studio"; npm run test:postgres
 ```
 
 ### Browser test
